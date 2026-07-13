@@ -1,11 +1,9 @@
 package com.ltc.logisticsproject.entity;
 
 import ch.qos.logback.core.status.Status;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
@@ -14,6 +12,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Data
 @Table(name = "trips")
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -34,14 +33,22 @@ public class Trip {
     @Column(nullable = false)
     TripStatus status;
 
+     LocalDateTime startedAt;
+     LocalDateTime deliveredAt;
+     LocalDateTime createdAt;
 
-    private Double estimatedDistanceKm;
-    private Double estimatedCost;
 
+     Double estimatedDistanceKm;
+     Double estimatedCost;
+
+    @Column(columnDefinition = "TEXT")
+     String routeInfo;
+
+    @JsonIgnore
     @OneToMany(mappedBy = "trip")
-    List<Cargo> cargos;
+     List<Cargo> cargos;
 
-    LocalDateTime createdAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
