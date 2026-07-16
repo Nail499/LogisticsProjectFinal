@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "trip_expenses")
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripExpense {
     @Id

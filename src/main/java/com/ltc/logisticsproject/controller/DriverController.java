@@ -1,9 +1,12 @@
 package com.ltc.logisticsproject.controller;
 
+import com.ltc.logisticsproject.dto.ExpenseRequest;
+import com.ltc.logisticsproject.dto.LocationRequest;
 import com.ltc.logisticsproject.dto.TripStatusUpdateRequest;
 import com.ltc.logisticsproject.entity.*;
 import com.ltc.logisticsproject.repository.*;
 import com.ltc.logisticsproject.service.DriverTripService;
+import com.ltc.logisticsproject.service.ExpenseService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,6 +25,8 @@ public class DriverController {
     final TripRepository tripRepository;
     final UserRepository userRepository;
     final DriverTripService driverTripService;
+    final TrackingLogRepository trackingLogRepository;
+    final ExpenseService expenseService;
 
     @GetMapping("/trips/current")
     public ResponseEntity<List<Trip>> currentTrips(Authentication authentication) {
@@ -50,5 +55,37 @@ public class DriverController {
             throw new RuntimeException("Bu istifadəçi sürücü deyil");
         }
         return user.getDriverId();
+    }
+
+    @PostMapping("/trips/{id}/tracking")
+    public ResponseEntity<TrackingLog> sendLocation(@PathVariable Long id,
+                                                    @RequestBody LocationRequest request,
+                                                    Authentication authentication) {
+        Long driverId = currentDriverId(authentication);
+        Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Reys tapılmadı"));
+        if (!trip.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("Bu reys sizə aid deyil");
+        }
+
+        TrackingLog log = TrackingLog.builder()
+                .trip(trip)
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .build();
+
+        return ResponseEntity.ok(trackingLogRepository.save(log));
+    }
+
+    @PostMapping("/trips/{id}/expenses")
+    public ResponseEntity<TripExpense> addExpense(@PathVariable Long id,
+                                                  @RequestBody ExpenseRequest request,
+                                                  Authentication authentication) {
+        Long driverId = currentDriverId(authentication);
+        Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Reys tapılmadı"));
+        if (!trip.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("Bu reys sizə aid deyil");
+        }
+
+        return ResponseEntity.ok(expenseService.addExpense(id, request.getCategory(), request.getAmount(), request.getDescription()));
     }
 }
