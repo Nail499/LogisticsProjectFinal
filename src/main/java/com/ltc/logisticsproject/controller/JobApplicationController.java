@@ -46,19 +46,22 @@ public class JobApplicationController {
         application = jobApplicationRepository.save(application);
 
         return ResponseEntity.ok(ApplicationStatusResponse.builder()
-                .id(application.getId())
+                .applicationCode(application.getApplicationCode())
                 .status(application.getStatus())
                 .message("Müraciətiniz qəbul edildi, nəzərdən keçirilir")
                 .build());
     }
 
-    @GetMapping("/{id}/status")
-    public ResponseEntity<ApplicationStatusResponse> checkStatus(@PathVariable Long id) {
-        JobApplication application = jobApplicationRepository.findById(id)
+    // Path dəyişkəni "id" deyil "code" — bax JobApplication.applicationCode
+    // izahı: ardıcıl DB id-si əvəzinə unikal kodla axtarılır (həm daha
+    // "peşəkar" görünür, həm də enumerasiya təhlükəsizlik riskini aradan qaldırır).
+    @GetMapping("/status/{code}")
+    public ResponseEntity<ApplicationStatusResponse> checkStatus(@PathVariable String code) {
+        JobApplication application = jobApplicationRepository.findByApplicationCode(code)
                 .orElseThrow(() -> new RuntimeException("Müraciət tapılmadı"));
 
         return ResponseEntity.ok(ApplicationStatusResponse.builder()
-                .id(application.getId())
+                .applicationCode(application.getApplicationCode())
                 .status(application.getStatus())
                 .rejectionReason(application.getRejectionReason())
                 .build());

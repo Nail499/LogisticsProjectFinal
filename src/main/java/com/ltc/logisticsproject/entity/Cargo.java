@@ -28,7 +28,7 @@ public class Cargo {
 
     @ManyToOne
     @JoinColumn(name = "origin_warehouse_id")
-     WareHouse originWarehouse;
+    Warehouse originWarehouse;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -42,12 +42,36 @@ public class Cargo {
 
      java.time.LocalDate requestedPickupDate;
 
+     String pickupAddress;
+     Double pickupLatitude;
+     Double pickupLongitude;
+
      String destinationAddress;
      Double destinationLatitude;
      Double destinationLongitude;
 
      String customerName;
      String customerPhone;
+
+    // Beynəlxalq göndəriş sahələri — daxili (Azərbaycan daxili) sifarişlərdə
+    // boş qalır, dispetçer/müştəri "Beynəlxalq göndərişdir" seçəndə doldurulur.
+    @Enumerated(EnumType.STRING)
+    TransportMode preferredTransportMode;
+
+    @Enumerated(EnumType.STRING)
+    Incoterm incoterm;
+
+    String originCountry;
+    String destinationCountry;
+    // Sadələşdirilmiş saxlama — vergüllə ayrılmış ölkə adları (məs.
+    // "Gürcüstan, Türkiyə"), ayrıca cədvəl qurmadan tranzit marşrutunu izah edir.
+    String transitCountries;
+    // Boolean (primitiv boolean yox) qəsdən seçilib: "boolean" DB sütununu
+    // NOT NULL kimi yaradır, bu isə artıq sətirləri olan mövcud "cargos"
+    // cədvəlinə ALTER TABLE zamanı "contains null values" xətası ilə
+    // uğursuz olurdu. Boolean nullable sütun yaradır, köhnə sətirlər
+    // avtomatik NULL alır — kodda Boolean.TRUE.equals(...) ilə oxunur.
+    Boolean requiresCustoms;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

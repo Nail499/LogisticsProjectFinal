@@ -18,6 +18,14 @@ public class JobApplication {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    // İctimai (auth-suz) status yoxlama endpoint-i əvvəllər ardıcıl DB id-si
+    // ilə axtarırdı — bu həm "kod" kimi peşəkar görünmürdü, həm də təhlükəsizlik
+    // problemi idi (kimsə 1,2,3... deyə sadalayaraq başqasının müraciət
+    // statusunu/rədd səbəbini görə bilərdi). Cargo.trackingNumber ilə eyni
+    // naxışla unikal, təxmin edilməsi çətin kod yaradılır.
+    @Column(unique = true)
+    String applicationCode;
+
     @Column(nullable = false)
     String fullName;
 
@@ -43,6 +51,9 @@ public class JobApplication {
     public void prePersist() {
         this.appliedAt = LocalDateTime.now();
         this.status = ApplicationStatus.PENDING;
+        if (this.applicationCode == null) {
+            this.applicationCode = "APP" + System.currentTimeMillis();
+        }
     }
 
 }

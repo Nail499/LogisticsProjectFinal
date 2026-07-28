@@ -44,6 +44,10 @@ public class Trip {
     @Column(columnDefinition = "TEXT")
      String routeInfo;
 
+    // Stage 8 — mobile driver app: photo proof of delivery uploaded from the
+    // Android app when a trip is marked DELIVERED.
+     String proofOfDeliveryUrl;
+
     @JsonIgnore
     @OneToMany(mappedBy = "trip")
      List<Cargo> cargos;

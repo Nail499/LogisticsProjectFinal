@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,12 @@ public class Customer {
 
      String email;
      String companyName;
+
+    // Profile settings (self-service, see ProfileController)
+     String photoUrl;
+     LocalDate dateOfBirth;
+     String nationality;
+     String location;
 
      LocalDateTime createdAt;
 

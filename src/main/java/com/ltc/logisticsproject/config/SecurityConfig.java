@@ -42,7 +42,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000", "https://*.ondigitalocean.app"));
+        config.setAllowedOriginPatterns(List.of("http://localhost:5173", "http://localhost:3000", "https://*.ondigitalocean.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -59,10 +59,25 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/applications/**").permitAll()
                         .requestMatchers("/api/tracking/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Stage 6: SockJS handshake for the live GPS broadcast channel.
+                        // Same trust model as /api/tracking/** — public, read-only,
+                        // scoped to whatever tripId/trackingNumber the client already knows.
+                        .requestMatchers("/ws/**").permitAll()
+                        // Uploaded files (profile photos, trade documents, proof-of-delivery
+                        // photos...) are served as plain static resources by WebConfig at
+                        // /uploads/** with random UUID filenames — but WITHOUT this rule they
+                        // fall through to .anyRequest().authenticated() below, and a plain
+                        // <img src="..."> or <a href="..."> tag can't attach the JWT Bearer
+                        // header the way axiosClient does, so the browser gets a 403 trying
+                        // to load them directly. The UUID filename is effectively the access
+                        // token here (same trust model as /api/tracking/**), so public GET
+                        // access is fine.
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/dispatcher/**").hasAnyRole("DISPATCHER", "ADMIN")
                         .requestMatchers("/api/driver/**").hasRole("DRIVER")

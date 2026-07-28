@@ -1,8 +1,10 @@
 package com.ltc.logisticsproject.controller;
 
 import com.ltc.logisticsproject.dto.CargoRequest;
+import com.ltc.logisticsproject.dto.CustomsEstimateRequest;
 import com.ltc.logisticsproject.entity.*;
 import com.ltc.logisticsproject.repository.*;
+import com.ltc.logisticsproject.service.CustomsDutyService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,15 +21,16 @@ import java.util.List;
 public class CustomerCargoController {
 
     final CargoRepository cargoRepository;
-    final WareHouseRepository warehouseRepository;
+    final WarehouseRepository warehouseRepository;
     final UserRepository userRepository;
     final CustomerRepository customerRepository;
+    final CustomsDutyService customsDutyService;
 
     @PostMapping
     public ResponseEntity<Cargo> create(@RequestBody CargoRequest request, Authentication authentication) {
         Customer customer = currentCustomer(authentication);
 
-        WareHouse warehouse = null;
+        Warehouse warehouse = null;
         if (request.getOriginWarehouseId() != null) {
             warehouse = warehouseRepository.findById(request.getOriginWarehouseId())
                     .orElseThrow(() -> new RuntimeException("Anbar tapılmadı"));
@@ -38,6 +41,9 @@ public class CustomerCargoController {
                 .weight(request.getWeight())
                 .volume(request.getVolume())
                 .originWarehouse(warehouse)
+                .pickupAddress(request.getPickupAddress())
+                .pickupLatitude(request.getPickupLatitude())
+                .pickupLongitude(request.getPickupLongitude())
                 .destinationAddress(request.getDestinationAddress())
                 .destinationLatitude(request.getDestinationLatitude())
                 .destinationLongitude(request.getDestinationLongitude())
@@ -48,6 +54,12 @@ public class CustomerCargoController {
                 .customerName(customer.getFullName())
                 .customerPhone(customer.getPhone())
                 .status(CargoStatus.PENDING)
+                .requiresCustoms(request.isRequiresCustoms())
+                .preferredTransportMode(request.getPreferredTransportMode())
+                .incoterm(request.getIncoterm())
+                .originCountry(request.getOriginCountry())
+                .destinationCountry(request.getDestinationCountry())
+                .transitCountries(request.getTransitCountries())
                 .build();
 
         cargo = cargoRepository.save(cargo);
@@ -58,6 +70,23 @@ public class CustomerCargoController {
     public ResponseEntity<List<Cargo>> myOrders(Authentication authentication) {
         Customer customer = currentCustomer(authentication);
         return ResponseEntity.ok(cargoRepository.findByCustomerId(customer.getId()));
+    }
+
+    @GetMapping("/warehouses")
+    public ResponseEntity<List<Warehouse>> warehouses() {
+        return ResponseEntity.ok(warehouseRepository.findAll());
+    }
+
+    // Gömrük kalkulyatoru — müştəri hələ sifariş yaratmadan, sadəcə mal
+    // növü və dəyərə görə təxmini rüsum/ƏDV/ödəniləcək məbləği görmək
+    // istəyəndə istifadə olunur. Heç bir Cargo/CustomsDeclaration yaratmır,
+    // yalnız CustomsDutyService-in eyni real hesablama məntiqini işlədir
+    // (bax dispetçerin gömrük bəyannaməsi paneli — eyni tarif cədvəlini
+    // istifadə edir, ona görə nəticələr üst-üstə düşür).
+    @PostMapping("/customs-estimate")
+    public ResponseEntity<CustomsDutyService.DutyCalculation> estimateCustoms(@RequestBody CustomsEstimateRequest request) {
+        double declaredValue = request.getDeclaredValue() != null ? request.getDeclaredValue() : 0.0;
+        return ResponseEntity.ok(customsDutyService.calculate(request.getCargoType(), declaredValue));
     }
 
     private Customer currentCustomer(Authentication authentication) {

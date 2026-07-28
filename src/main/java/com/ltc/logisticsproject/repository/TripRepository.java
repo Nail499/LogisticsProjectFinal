@@ -9,4 +9,9 @@ import java.util.List;
 public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findByDriverIdAndStatusNot(Long driverId, TripStatus status);
     List<Trip> findByDriverIdAndStatus(Long driverId, TripStatus status);
+    // Used by AdminManagementController#deleteDriver — needs every trip
+    // (any status) to decide whether the driver can be safely removed.
+    List<Trip> findByDriverId(Long driverId);
+    // Same idea for AdminManagementController#deleteVehicle.
+    List<Trip> findByVehicleId(Long vehicleId);
 }
