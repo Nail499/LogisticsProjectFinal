@@ -20,26 +20,42 @@ public class JobApplicationController {
     final JobApplicationRepository jobApplicationRepository;
     final FileStorageService fileStorageService;
 
+    // Tır sahələri artıq MƏCBURİ deyil — bəzi müraciətçilərin şirkət tırı ilə
+    // işləməsi lazımdır (bax JobApplication.hasOwnVehicle izahı). hasOwnVehicle
+    // true-dursa vehicle* sahələri (plaka, marka, sənəd) tələb olunur, əks
+    // halda hamısı boş buraxıla bilər. Tutum (capacity) sahəsi qəsdən YOXDUR —
+    // tır yük daşımır, yalnız kəllə hissəsidir (bax Vehicle.java izahı).
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<ApplicationStatusResponse> submit(
+    public ResponseEntity<?> submit(
             @RequestParam String fullName,
             @RequestParam String phone,
             @RequestParam("licenseDocument") MultipartFile licenseDocument,
-            @RequestParam String vehiclePlateNumber,
-            @RequestParam String vehicleBrand,
-            @RequestParam Double vehicleCapacity,
-            @RequestParam("vehicleDocument") MultipartFile vehicleDocument
+            @RequestParam(required = false, defaultValue = "false") boolean hasOwnVehicle,
+            @RequestParam(required = false) String vehiclePlateNumber,
+            @RequestParam(required = false) String vehicleBrand,
+            @RequestParam(value = "vehicleDocument", required = false) MultipartFile vehicleDocument
     ) {
+        if (hasOwnVehicle) {
+            boolean missing = vehiclePlateNumber == null || vehiclePlateNumber.isBlank()
+                    || vehicleBrand == null || vehicleBrand.isBlank()
+                    || vehicleDocument == null || vehicleDocument.isEmpty();
+            if (missing) {
+                return ResponseEntity.badRequest().body(java.util.Map.of(
+                        "message", "Öz tırınızla müraciət edirsinizsə, tır məlumatları və sənədi tələb olunur"));
+            }
+        }
+
         String licenseUrl = fileStorageService.store(licenseDocument);
-        String vehicleDocUrl = fileStorageService.store(vehicleDocument);
+        String vehicleDocUrl = (hasOwnVehicle && vehicleDocument != null && !vehicleDocument.isEmpty())
+                ? fileStorageService.store(vehicleDocument) : null;
 
         JobApplication application = JobApplication.builder()
                 .fullName(fullName)
                 .phone(phone)
                 .licenseDocumentUrl(licenseUrl)
-                .vehiclePlateNumber(vehiclePlateNumber)
-                .vehicleBrand(vehicleBrand)
-                .vehicleCapacity(vehicleCapacity)
+                .hasOwnVehicle(hasOwnVehicle)
+                .vehiclePlateNumber(hasOwnVehicle ? vehiclePlateNumber : null)
+                .vehicleBrand(hasOwnVehicle ? vehicleBrand : null)
                 .vehicleDocumentUrl(vehicleDocUrl)
                 .build();
 

@@ -29,6 +29,14 @@ public class Trip {
     @JoinColumn(name = "vehicle_id")
     Vehicle vehicle;
 
+    // İstəyə bağlı — dartıcı (vehicle) ilə ayrıca seçilən qoşqu. Qoşqusuz
+    // dartıcılar üçün (yalnız gövdə) və ya qoşqu tələb olunmayan reyslər
+    // üçün null qala bilər (bax DispatcherService#createTrip,
+    // TripRequest.trailerId).
+    @ManyToOne
+    @JoinColumn(name = "trailer_id")
+    Trailer trailer;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     TripStatus status;

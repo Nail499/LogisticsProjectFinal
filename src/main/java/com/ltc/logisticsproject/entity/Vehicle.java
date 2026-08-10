@@ -24,7 +24,13 @@ public class Vehicle {
     private String plateNumber;
 
     private String brand;
-    private Double capacity;
+    // NƏZƏRƏ AL: bu entity-də YÜK TUTUMU sahəsi YOXDUR — tır (dartıcı)
+    // yalnız "baş hissə"dir, özü heç vaxt yük daşımır, kəlləyə qoşulan
+    // qoşquya (bax Trailer.capacity) qoşulub yükü O daşıyır. Əvvəllər burada
+    // `capacity` sahəsi var idi (layihənin ilk, Trailer konsepsiyası
+    // yaranmazdan əvvəlki sadə modelindən qalma), amma məntiqsiz olduğu üçün
+    // silindi — bax Trailer.java-dakı ətraflı izah və CargoQueue.jsx#
+    // effectiveCapacityTons (yük çəkisi limiti YALNIZ qoşqudan gəlir).
     private Double fuelConsumption;
     private String vehicleDocumentUrl;
 
@@ -56,11 +62,22 @@ public class Vehicle {
     @JoinColumn(name = "driver_id", unique = true)
     private Driver driver;
 
+    // Şirkətə məxsusdursa (COMPANY) — dispetçer istənilən aktiv sürücüyə
+    // reys-be-reys verə bilər, `driver` sahəsi boş qalır. Sürücünün öz
+    // tırıdırsa (DRIVER_OWNED) — `driver` mütləq həmin sürücüyə bağlıdır və
+    // dispetçerin tır seçimində YALNIZ o sürücü seçiləndə görünür (bax
+    // DispatcherController#allVehicles driverId filtri). Köhnə sətirlərdə
+    // (miqrasiyadan əvvəl) bu sütun boş ola bilər, ona görə prePersist-də
+    // deyil, oxuyan tərəfdə (DTO-larda) null-u COMPANY kimi rəftar edirik.
+    @Enumerated(EnumType.STRING)
+    private OwnerType ownerType;
+
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         if (this.transportMode == null) this.transportMode = TransportMode.TRUCK;
+        if (this.ownerType == null) this.ownerType = OwnerType.COMPANY;
     }
 }

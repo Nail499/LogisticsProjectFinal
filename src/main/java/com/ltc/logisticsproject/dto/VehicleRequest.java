@@ -1,5 +1,6 @@
 package com.ltc.logisticsproject.dto;
 
+import com.ltc.logisticsproject.entity.OwnerType;
 import com.ltc.logisticsproject.entity.TransportMode;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -10,7 +11,10 @@ import lombok.experimental.FieldDefaults;
 public class VehicleRequest {
     String plateNumber;
     String brand;
-    Double capacity;
     Double fuelConsumption;
     TransportMode transportMode;
+    // Boş buraxılsa Vehicle.prePersist COMPANY təyin edir.
+    OwnerType ownerType;
+    // Yalnız ownerType=DRIVER_OWNED olduqda tələb olunur.
+    Long driverId;
 }

@@ -83,10 +83,24 @@ public class Cargo {
 
      LocalDateTime createdAt;
 
+    // Ödəniş sistemi (bax PaymentService) — sifariş yaradılanda avtomatik
+    // hesablanan qiymət (AZN) və ödənişin edilib-edilmədiyi. Faktiki Stripe
+    // əməliyyatları Payment cədvəlində saxlanılır, "paid" burada sürətli
+    // UI yoxlaması üçün denormallaşdırılıb (Payment.status == SUCCEEDED ilə
+    // sinxron saxlanılır, bax PaymentService.confirmPayment).
+    Double price;
+    Boolean paid;
+
+    // Dispetçer PENDING yükü imtina edəndə (bax DispatcherController#rejectCargo)
+    // sərbəst səbəb mətni — məcburi deyil, boş qala bilər.
+    @Column(length = 500)
+    String cancelReason;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) this.status = CargoStatus.PENDING;
+        if (this.paid == null) this.paid = false;
         if (this.trackingNumber == null) {
             this.trackingNumber = "TRK" + System.currentTimeMillis();
         }

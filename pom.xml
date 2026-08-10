@@ -53,6 +53,68 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
+		<!-- Email təsdiq kodu (qeydiyyat) və şifrə bərpası kodu göndərmək üçün. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<!-- Ödəniş sistemi (Stripe test rejimi) — kargo/faktura ödənişləri üçün
+		     real Stripe PaymentIntent axını. Açarlar .idea/workspace.xml-də
+		     env dəyişəni kimi saxlanılır (bax application.properties). -->
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>33.1.1</version>
+		</dependency>
+		<!-- Brauzer push bildirişləri (Web Push protokolu + VAPID). BouncyCastle
+		     JCE provider tələb edir (bax PushNotificationService#init). -->
+		<dependency>
+			<groupId>nl.martijndwars</groupId>
+			<artifactId>web-push</artifactId>
+			<version>5.1.2</version>
+		</dependency>
+		<!-- web-push kitabxanası BouncyCastle-ı runtime-da tələb edir, lakin öz
+		     POM-unda compile-scope asılılıq kimi bəyan etmir (bax `mvn
+		     dependency:tree` nəticəsi — BouncyCastle ümumiyyətlə ağacda yox
+		     idi), ona görə burada açıq şəkildə əlavə olunur. -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.78.1</version>
+		</dependency>
+		<!-- pushService.send(...) metodu org.apache.http.HttpResponse
+		     qaytarır (web-push kitabxanasının öz public API-si) — bu tip
+		     yalnız runtime-scope transitiv asılılıq kimi mövcud olduğu üçün
+		     (bax dependency:tree) compilyator metodu çağıra bilmir, hətta
+		     nəticə istifadə olunmasa belə. Burada açıq elan etməklə
+		     compile-scope-a keçirilir. -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore</artifactId>
+			<version>4.4.16</version>
+		</dependency>
+		<!-- pushService.send(...) "throws ... JoseException" elan edir (JWS
+		     imzalama üçün) — eyni səbəbdən (bax yuxarıdakı httpcore qeydi)
+		     compile-scope-a keçirilməlidir. -->
+		<dependency>
+			<groupId>org.bitbucket.b_c</groupId>
+			<artifactId>jose4j</artifactId>
+			<version>0.7.9</version>
+		</dependency>
+        <!-- jackson-databind (ObjectMapper/JsonNode) tranzitiv şəkildə yalnız
+             aşağıdakı jjwt-jackson üzərindən gəlirdi, o da runtime scope-dadır
+             — deməli Jackson sinifləri runtime-da mövcud idi (Spring-in öz
+             JSON serializasiyası buna görə işləyirdi), amma compile zamanı
+             görünmürdü. AiChatService/AiToolExecutor (AI dəstək chat-i,
+             Groq API cavabını JsonNode ilə parse edir) birbaşa
+             com.fasterxml.jackson.databind import etdiyi üçün "package does
+             not exist" xətası verirdi. compile-scope açıq elan olunur ki,
+             bu asılılıq zəncirindən asılı qalmasın. Versiya yazılmır —
+             spring-boot-starter-parent-in Jackson BOM-u idarə edir. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -71,6 +133,15 @@
             <scope>runtime</scope>
         </dependency>
 
+		<!-- API sənədləşməsi (Swagger UI) — bütün @RestController endpoint-ləri
+		     avtomatik /swagger-ui.html səhifəsində göstərir, əl ilə heç bir
+		     annotasiya tələb etmir. SecurityConfig-də /swagger-ui/** və
+		     /v3/api-docs/** artıq permitAll-dır. -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.1.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

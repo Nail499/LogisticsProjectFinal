@@ -33,6 +33,8 @@ public class Driver {
      LocalDate dateOfBirth;
      String nationality;
      String location;
+     // Customer.email ilə eyni pattern — profil səhifəsindən kodla dəyişilə bilər.
+     String email;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

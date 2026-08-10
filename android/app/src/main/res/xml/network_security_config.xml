@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backend runs on plain http:// during local development (localhost / your
+  computer's LAN IP — see ApiConfig.kt). Android blocks cleartext (non-TLS)
+  traffic by default since API 28, so without this, every API call would
+  fail silently with a network error. Before shipping this app anywhere
+  public, put the backend behind HTTPS and remove this file (or restrict
+  it to your specific dev-only domain).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -12,4 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByDriverId(Long driverId);
     Optional<User> findByCustomerId(Long customerId);
     List<User> findByRole(Role role);
+    // Bax MaintenanceService#previewKeptAccounts — sıfırlama zamanı hər
+    // roldan saxlanılacaq (ID-si ən kiçik) hesabı öncədən göstərmək üçün.
+    Optional<User> findFirstByRoleOrderByIdAsc(Role role);
 }

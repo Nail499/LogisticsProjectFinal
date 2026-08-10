@@ -33,9 +33,19 @@ public class JobApplication {
     String phone;
 
     String licenseDocumentUrl;
+
+    // Müraciətçi öz tırı ilə işləmək istəyirsə true — bu halda aşağıdakı
+    // vehicle* sahələri doldurulmalıdır (bax JobApplicationController#submit
+    // validasiyası). false/null olduqda müraciətçinin tırı yoxdur, təsdiq
+    // ediləndə (bax AdminApplicationService#approve) heç bir Vehicle
+    // yaradılmır — sürücü sonra dispetçer tərəfindən reys-be-reys şirkət
+    // tırı ilə təhkim olunur. NƏZƏRƏ AL: burada tutum (capacity) sahəsi
+    // YOXDUR — tır yük daşımır, yalnız kəllə hissəsidir (bax Vehicle.java-
+    // dakı ətraflı izah); əvvəllər olan vehicleCapacity sahəsi bu səbəbdən
+    // silindi.
+    Boolean hasOwnVehicle;
     String vehiclePlateNumber;
     String vehicleBrand;
-    Double vehicleCapacity;
     String vehicleDocumentUrl;
 
     @Enumerated(EnumType.STRING)

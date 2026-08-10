@@ -12,4 +12,7 @@ public interface CargoRepository extends JpaRepository<Cargo, Long> {
     List<Cargo> findByCustomerId(Long customerId);
     List<Cargo> findByStatus(CargoStatus status);
     List<Cargo> findByTripId(Long tripId);
+    // Mərkəzi "Yazışma" bölməsi üçün (bax ChatService#listChatCargos) — ən
+    // son sifariş əvvəldə.
+    List<Cargo> findAllByOrderByIdDesc();
 }

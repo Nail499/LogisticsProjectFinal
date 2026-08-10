@@ -1,5 +1,8 @@
 package com.ltc.logisticsproject.dto;
 
+import com.ltc.logisticsproject.dto.customs.BorderCrossingView;
+import com.ltc.logisticsproject.dto.customs.CustomsDeclarationView;
+import com.ltc.logisticsproject.dto.customs.TradeDocumentView;
 import com.ltc.logisticsproject.entity.CargoStatus;
 import com.ltc.logisticsproject.entity.Incoterm;
 import com.ltc.logisticsproject.entity.TransportMode;
@@ -53,6 +56,10 @@ public class PublicTrackingResponse {
 
     Integer estimatedEtaMinutes;
     String tripStartedAt;
+
+    // Çatdırılma sübutu (POD) — sürücü DELIVERED işarələməzdən əvvəl yüklədiyi
+    // məcburi foto (bax DriverController#uploadProof, Trip.proofOfDeliveryUrl).
+    String proofOfDeliveryUrl;
 
     // Yol boyu xərclər (fuel/toll/food/...) — reys yaranıbsa müştəriyə də
     // görünür, şübhəli (anomaly) qeyd olunanlar TripExpenseView.isAnomaly

@@ -18,6 +18,10 @@ public class ExpenseService {
     final TripRepository tripRepository;
 
     public TripExpense addExpense(Long tripId, ExpenseCategory category, Double amount, String description) {
+        return addExpense(tripId, category, amount, description, null);
+    }
+
+    public TripExpense addExpense(Long tripId, ExpenseCategory category, Double amount, String description, String receiptPhotoUrl) {
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new RuntimeException("Reys tapılmadı"));
 
@@ -29,6 +33,7 @@ public class ExpenseService {
                 .amount(amount)
                 .description(description)
                 .isAnomaly(anomaly)
+                .receiptPhotoUrl(receiptPhotoUrl)
                 .build();
 
         return tripExpenseRepository.save(expense);

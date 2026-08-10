@@ -11,6 +11,7 @@ import java.util.List;
 public class TripRequest {
     Long driverId;
     Long vehicleId;
+    Long trailerId;
     List<Long> cargoIds;
     Double estimatedDistanceKm;
     Double estimatedCost;

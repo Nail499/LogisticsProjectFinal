@@ -1,0 +1,58 @@
+name: CI
+
+# Hər push və pull request-də backend-in compile olduğunu və frontend-in
+# build alındığını yoxlayır. Xüsusilə hazırda backend-də əl ilə (compiler
+# yoxlaması olmadan) aparılan dto/ paket refaktorinqi zamanı faydalıdır —
+# hər commit avtomatik yoxlanılır.
+#
+# QEYD: Backend testləri (LogisticsProjectApplicationTests) burada İŞLƏDİLMİR.
+# Bu test tam Spring konteksti yükləyir (@SpringBootTest) — real Postgres
+# bazası VƏ etibarlı formatda JWT_SECRET/VAPID açar cütü tələb edir (VAPID
+# açarları BouncyCastle ilə əsl EC açarı kimi parse olunur, ona görə saxta
+# dəyər ilə tətbiq başlanğıcda çökər). Bunu CI-da düzgün qurmaq üçün əvvəlcə
+# GitHub Secrets-də real test dəyərləri təyin olunmalıdır — hələlik yalnız
+# compile mərhələsi yoxlanılır.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend (compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17 quraşdır
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Compile
+        run: ./mvnw -B compile
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node 20 quraşdır
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Asılılıqları quraşdır
+        run: npm ci
+
+      - name: Build
+        run: npm run build

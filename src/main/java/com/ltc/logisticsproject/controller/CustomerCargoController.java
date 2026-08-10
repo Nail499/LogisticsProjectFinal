@@ -1,10 +1,12 @@
 package com.ltc.logisticsproject.controller;
 
 import com.ltc.logisticsproject.dto.CargoRequest;
-import com.ltc.logisticsproject.dto.CustomsEstimateRequest;
+import com.ltc.logisticsproject.dto.customs.CustomsEstimateRequest;
 import com.ltc.logisticsproject.entity.*;
 import com.ltc.logisticsproject.repository.*;
 import com.ltc.logisticsproject.service.CustomsDutyService;
+import com.ltc.logisticsproject.service.NotificationService;
+import com.ltc.logisticsproject.service.PricingService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,6 +27,8 @@ public class CustomerCargoController {
     final UserRepository userRepository;
     final CustomerRepository customerRepository;
     final CustomsDutyService customsDutyService;
+    final NotificationService notificationService;
+    final PricingService pricingService;
 
     @PostMapping
     public ResponseEntity<Cargo> create(@RequestBody CargoRequest request, Authentication authentication) {
@@ -62,8 +66,30 @@ public class CustomerCargoController {
                 .transitCountries(request.getTransitCountries())
                 .build();
 
-        cargo = cargoRepository.save(cargo);
-        return ResponseEntity.ok(cargo);
+        cargo.setPrice(pricingService.calculatePrice(cargo));
+        final Cargo savedCargo = cargoRepository.save(cargo);
+
+        // "final Cargo savedCargo" qəsdən ayrıca dəyişən — lambda daxilində
+        // yalnız effectively-final dəyişənlərə istinad oluna bilər, "cargo"
+        // isə save()-dən sonra yenidən mənimsədildiyi üçün buna uyğun deyil.
+        userRepository.findByCustomerId(customer.getId()).ifPresent(user ->
+                notificationService.notifyWithEmail(
+                        user.getId(), customer.getEmail(), NotificationType.ORDER_CREATED,
+                        "Sifarişiniz qəbul edildi",
+                        savedCargo.getTrackingNumber() + " nömrəli göndəriş sifarişiniz qeydə alındı. Dispetçer tezliklə sürücü təyin edəcək.",
+                        "/customer/orders", "Fleetra — sifarişiniz qəbul edildi", "Sifarişə bax"
+                )
+        );
+
+        // Dispetçer/admin komandası "Gözləyən yüklər" siyahısına yeni işin
+        // düşdüyünü zəng ikonundan dərhal görsün (bax NotificationService#notifyDispatchers).
+        notificationService.notifyDispatchers(
+                "Yeni sifariş daxil oldu",
+                savedCargo.getTrackingNumber() + " nömrəli yeni sifariş (" + customer.getFullName() + ") gözləyən yüklər siyahısına düşdü.",
+                "/dispatcher/queue"
+        );
+
+        return ResponseEntity.ok(savedCargo);
     }
 
     @GetMapping

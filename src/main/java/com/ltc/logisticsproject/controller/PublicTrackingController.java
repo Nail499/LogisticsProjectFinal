@@ -1,9 +1,9 @@
 package com.ltc.logisticsproject.controller;
 
-import com.ltc.logisticsproject.dto.BorderCrossingView;
-import com.ltc.logisticsproject.dto.CustomsDeclarationView;
+import com.ltc.logisticsproject.dto.customs.BorderCrossingView;
+import com.ltc.logisticsproject.dto.customs.CustomsDeclarationView;
 import com.ltc.logisticsproject.dto.PublicTrackingResponse;
-import com.ltc.logisticsproject.dto.TradeDocumentView;
+import com.ltc.logisticsproject.dto.customs.TradeDocumentView;
 import com.ltc.logisticsproject.dto.TripExpenseView;
 import com.ltc.logisticsproject.entity.Cargo;
 import com.ltc.logisticsproject.entity.TrackingLog;
@@ -14,6 +14,8 @@ import com.ltc.logisticsproject.repository.CustomsDeclarationRepository;
 import com.ltc.logisticsproject.repository.TrackingLogRepository;
 import com.ltc.logisticsproject.repository.TradeDocumentRepository;
 import com.ltc.logisticsproject.repository.TripExpenseRepository;
+import com.ltc.logisticsproject.repository.VehicleRepository;
+import com.ltc.logisticsproject.entity.Vehicle;
 import com.ltc.logisticsproject.service.RouteEstimationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class PublicTrackingController {
     final TradeDocumentRepository tradeDocumentRepository;
     final CustomsDeclarationRepository customsDeclarationRepository;
     final BorderCrossingRepository borderCrossingRepository;
+    final VehicleRepository vehicleRepository;
     // Stage 6: ETA now goes through the shared simulated-routing service
     // (road-distance factor applied to haversine) instead of raw straight-
     // line distance — see RouteEstimationService for the documented estimate.
@@ -52,6 +55,7 @@ public class PublicTrackingController {
         List<String> vehicleDetailPhotoUrls = List.of();
         String tripStartedAt = null;
         String tripDeliveredAt = null;
+        String proofOfDeliveryUrl = null;
         Trip trip = cargo.getTrip();
 
         if (trip != null) {
@@ -74,12 +78,28 @@ public class PublicTrackingController {
                     vehicleDetailPhotoUrls = trip.getVehicle().getDetailPhotoUrls();
                 }
             }
+            // Fallback: reys yaradılanda dispetçerin seçdiyi "Vehicle" qeydi
+            // sürücünün öz profilində şəkil yüklədiyi "Vehicle" qeydindən fərqli
+            // ola bilər (iki ayrı DB sətri eyni fiziki maşın üçün — məs.
+            // "77my678" vs "77-MY-678"). Əsas/reys üzrə təhkim olunan maşında
+            // şəkil yoxdursa, sürücünün öz (driverId ilə bağlı) avtomobilindəki
+            // şəkillərə keç ki, müştəri hər halda maşını görə bilsin.
+            if (vehicleMainPhotoUrl == null && vehicleDetailPhotoUrls.isEmpty() && trip.getDriver() != null) {
+                Vehicle driverOwnVehicle = vehicleRepository.findByDriverId(trip.getDriver().getId()).orElse(null);
+                if (driverOwnVehicle != null) {
+                    vehicleMainPhotoUrl = driverOwnVehicle.getMainPhotoUrl();
+                    if (driverOwnVehicle.getDetailPhotoUrls() != null) {
+                        vehicleDetailPhotoUrls = driverOwnVehicle.getDetailPhotoUrls();
+                    }
+                }
+            }
             if (trip.getStartedAt() != null) {
                 tripStartedAt = trip.getStartedAt().toString();
             }
             if (trip.getDeliveredAt() != null) {
                 tripDeliveredAt = trip.getDeliveredAt().toString();
             }
+            proofOfDeliveryUrl = trip.getProofOfDeliveryUrl();
         }
 
         // Fall back to the pickup point when no GPS ping has arrived yet,
@@ -140,6 +160,7 @@ public class PublicTrackingController {
                 .vehicleDetailPhotoUrls(vehicleDetailPhotoUrls)
                 .estimatedEtaMinutes(etaMinutes)
                 .tripStartedAt(tripStartedAt)
+                .proofOfDeliveryUrl(proofOfDeliveryUrl)
                 .expenses(expenses)
                 .requiresCustoms(Boolean.TRUE.equals(cargo.getRequiresCustoms()))
                 .preferredTransportMode(cargo.getPreferredTransportMode())

@@ -1,8 +1,8 @@
 package com.ltc.logisticsproject.controller;
 
 import com.ltc.logisticsproject.dto.AdminSummaryResponse;
+import com.ltc.logisticsproject.dto.AnomalyExpenseResponse;
 import com.ltc.logisticsproject.dto.DispatcherAnalyticsResponse;
-import com.ltc.logisticsproject.entity.TripExpense;
 import com.ltc.logisticsproject.service.AdminReportService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class AdminReportController {
     }
 
     @GetMapping("/anomalies")
-    public ResponseEntity<List<TripExpense>> anomalies() {
+    public ResponseEntity<List<AnomalyExpenseResponse>> anomalies() {
         return ResponseEntity.ok(adminReportService.getAnomalies());
     }
 

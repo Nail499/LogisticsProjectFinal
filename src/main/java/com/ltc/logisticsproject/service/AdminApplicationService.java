@@ -42,14 +42,25 @@ public class AdminApplicationService {
                 .build();
         driver = driverRepository.save(driver);
 
-        Vehicle vehicle = Vehicle.builder()
-                .plateNumber(application.getVehiclePlateNumber())
-                .brand(application.getVehicleBrand())
-                .capacity(application.getVehicleCapacity())
-                .vehicleDocumentUrl(application.getVehicleDocumentUrl())
-                .driver(driver)
-                .build();
-        vehicleRepository.save(vehicle);
+        // Yalnız müraciətçi öz tırı ilə işləmək istəyibsə (hasOwnVehicle=true)
+        // Vehicle yaradılır — DRIVER_OWNED olaraq, yalnız bu sürücüyə bağlı.
+        // Əks halda sürücü tırsız təsdiqlənir, dispetçer sonra reys-be-reys
+        // şirkət tırı təhkim edir (bax DispatcherController#allVehicles).
+        Long vehicleId = null;
+        if (Boolean.TRUE.equals(application.getHasOwnVehicle())) {
+            // Nə Vehicle-də, nə də JobApplication-da artıq capacity sahəsi
+            // yoxdur — tır yük daşımır, yalnız kəllə hissəsidir (bax
+            // Vehicle.java-dakı izah).
+            Vehicle vehicle = Vehicle.builder()
+                    .plateNumber(application.getVehiclePlateNumber())
+                    .brand(application.getVehicleBrand())
+                    .vehicleDocumentUrl(application.getVehicleDocumentUrl())
+                    .ownerType(OwnerType.DRIVER_OWNED)
+                    .driver(driver)
+                    .build();
+            vehicle = vehicleRepository.save(vehicle);
+            vehicleId = vehicle.getId();
+        }
 
         String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 
@@ -70,10 +81,10 @@ public class AdminApplicationService {
         return ApprovalResponse.builder()
                 .applicationId(application.getId())
                 .driverId(driver.getId())
-                .vehicleId(vehicle.getId())
+                .vehicleId(vehicleId)
                 .username(user.getUsername())
                 .temporaryPassword(tempPassword)
-                .message("Sürücü hesabı yaradıldı")
+                .message(vehicleId != null ? "Sürücü hesabı yaradıldı" : "Sürücü hesabı yaradıldı (tırsız — dispetçer təhkim edəcək)")
                 .build();
     }
 

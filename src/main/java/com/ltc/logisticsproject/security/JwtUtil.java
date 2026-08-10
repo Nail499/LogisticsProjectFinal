@@ -56,6 +56,10 @@ public class JwtUtil {
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
+                // Kiçik saat fərqlərinə (server/klient arasında) qarşı 60 saniyəlik
+                // tolerantlıq — əks halda token həqiqi 24 saatlıq müddətindən əvvəl,
+                // sadəcə bir neçə saniyəlik saat fərqi ucbatından "expired" sayıla bilər.
+                .clockSkewSeconds(60)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

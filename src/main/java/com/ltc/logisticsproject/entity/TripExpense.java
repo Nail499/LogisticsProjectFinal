@@ -34,7 +34,10 @@ public class TripExpense {
     @Column(nullable = false)
     Boolean isAnomaly = false;
 
-
+    // Xərc qəbzi fotosu — sürücü çəkib yükləyir (könüllü), admin/dispetçer
+    // "Şübhəli xərclər" görünüşündə yoxlaya bilsin deyə (bax
+    // DriverController#addExpense, AdminReportService#buildAnomalyResponse).
+    String receiptPhotoUrl;
 
     LocalDateTime recordedAt;
 
