@@ -1,0 +1,10 @@
+# Docker build kontekstini kiçildir — backend jar-ı üçün bunların heç biri
+# lazım deyil (bax Dockerfile: yalnız pom.xml və src/ kopyalanır).
+target/
+uploads/
+.idea/
+.git/
+.github/
+frontend/
+android/
+*.log

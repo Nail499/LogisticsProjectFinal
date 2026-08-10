@@ -66,6 +66,10 @@ npm run dev
 
 Open the `android/` folder in Android Studio. See `android/README.md` for device setup (emulator vs. physical device, Firebase configuration).
 
+## Deployment
+
+Ready to deploy to DigitalOcean App Platform via `.do/app.yaml` (backend + frontend + managed Postgres, one spec). See [DEPLOY.md](DEPLOY.md) for the step-by-step guide, including required secrets and a known limitation around uploaded-file storage.
+
 ## API documentation
 
 Every backend endpoint is auto-documented via [springdoc-openapi](https://springdoc.org/):

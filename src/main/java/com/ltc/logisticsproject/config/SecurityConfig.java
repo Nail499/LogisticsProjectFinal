@@ -46,7 +46,12 @@ public class SecurityConfig {
         return web -> web.ignoring().requestMatchers(
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
-                "/swagger-ui.html"
+                "/swagger-ui.html",
+                // DigitalOcean App Platform bunu HTTP sağlamlıq yoxlaması üçün
+                // çağırır (bax .do/app.yaml health_check.http_path) — açarlar
+                // tələb etmədən əlçatan olmalıdır, əks halda deploy "unhealthy"
+                // görünüb daim yenidən başlayar.
+                "/actuator/health"
         );
     }
 

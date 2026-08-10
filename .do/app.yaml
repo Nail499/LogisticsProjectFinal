@@ -1,0 +1,84 @@
+# DigitalOcean App Platform tətbiq spesifikasiyası (App Spec).
+# Bu faylı App Platform-da "Create App → Edit Your App Spec" bölməsinə
+# yapışdıra, ya da `doctl apps create --spec .do/app.yaml` ilə istifadə edə
+# bilərsən. Addım-addım təlimat üçün bax DEPLOY.md.
+#
+# QEYD: SECRET tipli env dəyişənlərin dəyəri burada YAZILMIR (təhlükəsizlik
+# üçün) — App Platform UI-də "Create/Edit App" zamanı hər biri üçün sənə
+# xüsusi sətir göstərəcək, orada real dəyərləri əl ilə daxil edəcəksən.
+name: fleetra
+
+services:
+  - name: backend
+    source_dir: /
+    dockerfile_path: Dockerfile
+    github:
+      repo: Nail499/LogisticsProjectFinal
+      branch: master
+      deploy_on_push: true
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    health_check:
+      http_path: /actuator/health
+    envs:
+      # Verilənlər bazası — "db" komponentindən avtomatik bağlanır, əl ilə
+      # heç nə yazmırsan.
+      - key: SPRING_DATASOURCE_URL
+        value: ${db.JDBC_DATABASE_URL}
+      - key: SPRING_DATASOURCE_USERNAME
+        value: ${db.USERNAME}
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: ${db.PASSWORD}
+        type: SECRET
+
+      # Frontend-in canlı ünvanı — email-lərdəki "Bax" düyməsi üçün (bax
+      # application.properties app.frontend.url).
+      - key: FRONTEND_URL
+        value: ${frontend.PUBLIC_URL}
+
+      # Aşağıdakılar SECRET-dir — dəyərləri App Platform UI-də əl ilə
+      # daxil edilməlidir (bax DEPLOY.md).
+      - key: JWT_SECRET
+        type: SECRET
+      - key: ADMIN_INITIAL_PASSWORD
+        type: SECRET
+      - key: MAIL_USERNAME
+        type: SECRET
+      - key: MAIL_PASSWORD
+        type: SECRET
+      - key: STRIPE_PUBLISHABLE_KEY
+        type: SECRET
+      - key: STRIPE_SECRET_KEY
+        type: SECRET
+      - key: VAPID_PUBLIC_KEY
+        type: SECRET
+      - key: VAPID_PRIVATE_KEY
+        type: SECRET
+      # Boş buraxıla bilər — AiChatService konfiqurasiya olunmayanda tətbiq
+      # yenə açılır, sadəcə AI chat söylər ki, hələ hazır deyil.
+      - key: GROQ_API_KEY
+        type: SECRET
+
+static_sites:
+  - name: frontend
+    source_dir: frontend
+    github:
+      repo: Nail499/LogisticsProjectFinal
+      branch: master
+      deploy_on_push: true
+    build_command: npm run build
+    output_dir: dist
+    envs:
+      # Vite dəyişənləri build zamanı kod içinə "bişirilir" (runtime-da
+      # oxunmur), ona görə BUILD_TIME scope məcburidir.
+      - key: VITE_API_URL
+        scope: BUILD_TIME
+        value: ${backend.PUBLIC_URL}
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: false
+    size: db-s-dev-database
