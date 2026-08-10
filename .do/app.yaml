@@ -1,11 +1,19 @@
 # DigitalOcean App Platform tətbiq spesifikasiyası (App Spec).
-# Bu faylı App Platform-da "Create App → Edit Your App Spec" bölməsinə
-# yapışdıra, ya da `doctl apps create --spec .do/app.yaml` ilə istifadə edə
-# bilərsən. Addım-addım təlimat üçün bax DEPLOY.md.
+# Tətbiqi (istənilən konfiqurasiya ilə) əvvəlcə DO-nun sehrbazı ilə yarat,
+# sonra Settings → App Spec → Edit bölməsindən bu faylın məzmununu yapışdır
+# (DO artıq yaratma zamanı birbaşa YAML yapışdırmağa icazə vermir). Addım-
+# addım təlimat üçün bax DEPLOY.md.
 #
 # QEYD: SECRET tipli env dəyişənlərin dəyəri burada YAZILMIR (təhlükəsizlik
-# üçün) — App Platform UI-də "Create/Edit App" zamanı hər biri üçün sənə
-# xüsusi sətir göstərəcək, orada real dəyərləri əl ilə daxil edəcəksən.
+# üçün) — App Platform UI-də hər biri üçün sənə xüsusi sətir göstərəcək,
+# orada real dəyərləri əl ilə daxil edəcəksən.
+#
+# QEYD 2: DO artıq hər komponentə ayrıca subdomain vermir — bütün komponentlər
+# TƏK domendə (App Spec-in "ingress" bölməsi) path-əsaslı marşrutlanır.
+# Ona görə frontend "/" olaraq, backend isə özünün bütün real path-ləri
+# (/api, /ws, /uploads, /swagger-ui, /v3/api-docs, /actuator) ilə ayrıca
+# qeyd olunub — əks halda bu path-lər "/" tutucu qaydasına düşüb səhv
+# olaraq frontend-ə yönləndirilərdi.
 name: fleetra
 
 services:
@@ -18,7 +26,10 @@ services:
       deploy_on_push: true
     http_port: 8080
     instance_count: 1
-    instance_size_slug: apps-s-1vcpu-0.5gb
+    # 512MB (apps-s-1vcpu-0.5gb, $5/ay) Spring Boot + Hibernate + Security +
+    # WebSocket üçün çox az ola bilər (OOM riski) — 1GB ($10/ay) təhlükəsiz
+    # minimumdur. Bax DEPLOY.md "Xərc" bölməsi.
+    instance_size_slug: apps-s-1vcpu-1gb-fixed
     health_check:
       http_path: /actuator/health
     envs:
@@ -32,10 +43,12 @@ services:
         value: ${db.PASSWORD}
         type: SECRET
 
-      # Frontend-in canlı ünvanı — email-lərdəki "Bax" düyməsi üçün (bax
-      # application.properties app.frontend.url).
+      # Frontend ilə backend indi EYNİ domendədir (bax aşağıdakı ingress
+      # bölməsi), ona görə tətbiqin ümumi ünvanı (${APP_URL}) istifadə
+      # olunur — email-lərdəki "Bax" düyməsi üçün (bax application.properties
+      # app.frontend.url).
       - key: FRONTEND_URL
-        value: ${frontend.PUBLIC_URL}
+        value: ${APP_URL}
 
       # Aşağıdakılar SECRET-dir — dəyərləri App Platform UI-də əl ilə
       # daxil edilməlidir (bax DEPLOY.md).
@@ -71,10 +84,58 @@ static_sites:
     output_dir: dist
     envs:
       # Vite dəyişənləri build zamanı kod içinə "bişirilir" (runtime-da
-      # oxunmur), ona görə BUILD_TIME scope məcburidir.
+      # oxunmur), ona görə BUILD_TIME scope məcburidir. Frontend/backend
+      # eyni domendə olduğu üçün ${APP_URL} istifadə olunur (bax ingress).
       - key: VITE_API_URL
         scope: BUILD_TIME
-        value: ${backend.PUBLIC_URL}
+        value: ${APP_URL}
+
+# Tək paylaşılan domendə hər path-i düzgün komponentə yönləndirir. SIRA
+# VACİBDİR — daha spesifik path-lər (/api, /ws, ...) "/" tutucu qaydasından
+# ƏVVƏL gəlməlidir, əks halda onu heç vaxt görməzlər.
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /api
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /ws
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /uploads
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /swagger-ui
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /v3/api-docs
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /actuator
+      component:
+        name: backend
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /
+      component:
+        name: frontend
 
 databases:
   - name: db
