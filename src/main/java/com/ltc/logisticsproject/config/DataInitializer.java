@@ -28,6 +28,7 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = User.builder()
                     .username("admin")
+                    .fullName("Admin")
                     .password(passwordEncoder.encode(initialAdminPassword))
                     .role(Role.ADMIN)
                     .enabled(true)

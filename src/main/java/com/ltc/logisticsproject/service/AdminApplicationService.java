@@ -66,6 +66,7 @@ public class AdminApplicationService {
 
         User user = User.builder()
                 .username(application.getPhone())
+                .fullName(application.getFullName())
                 .password(passwordEncoder.encode(tempPassword))
                 .role(Role.DRIVER)
                 .driverId(driver.getId())
